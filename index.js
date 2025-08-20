@@ -1,18 +1,18 @@
 import directiveDefinitions from './directiveDefinitions';
-import LinkDirective from './LinkDirective';
-import MapToDirective from './MapToDirective';
-import MongoDirective from './MongoDirective';
+import linkDirectiveTransformer from './LinkDirective';
+import mapToDirectiveTransformer from './MapToDirective';
+import mongoDirectiveTransformer from './MongoDirective';
 
-const directives = {
-  mongo: MongoDirective,
-  link: LinkDirective,
-  map: MapToDirective,
+const transformers = {
+  mongo: mongoDirectiveTransformer,
+  link: linkDirectiveTransformer,
+  map: mapToDirectiveTransformer,
 };
 
 export {
-  directives,
+  transformers,
   directiveDefinitions,
-  LinkDirective,
-  MapToDirective,
-  MongoDirective,
+  linkDirectiveTransformer,
+  mapToDirectiveTransformer,
+  mongoDirectiveTransformer,
 };

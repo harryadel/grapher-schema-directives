@@ -1,5 +1,5 @@
-import { SchemaDirectiveVisitor } from 'graphql-tools';
-import { GraphQLScalarType, GraphQLObjectType } from 'graphql/type';
+import { mapSchema, getDirectives } from '@graphql-tools/utils';
+import { GraphQLScalarType } from 'graphql';
 import { Mongo } from 'meteor/mongo';
 
 function resolve(path, obj) {
@@ -7,41 +7,46 @@ function resolve(path, obj) {
     return prev ? prev[curr] : undefined;
   }, obj || self);
 }
-export default class MapToDirective extends SchemaDirectiveVisitor {
-  visitFieldDefinition(field, details) {
-    const { objectType } = details;
-    const { args } = this;
 
-    if (!objectType._mongoCollectionName) {
-      throw new Meteor.Error(
-        'collection-not-found',
-        `You are trying to set mapTo: ${
-          field.name
-        } but your object type does not have @mongo directive set-up`
-      );
+export default function mapToDirectiveTransformer(schema) {
+  return mapSchema(schema, {
+    [mapSchema.MAP_FIELD_DEFINITION]: (field, fieldName, typeName) => {
+      const directives = getDirectives(schema, field);
+      const mapDirective = directives.map;
+      
+      if (mapDirective && mapDirective.to) {
+        const objectType = schema.getType(typeName);
+        
+        if (!objectType._mongoCollectionName) {
+          throw new Meteor.Error(
+            'collection-not-found',
+            `You are trying to set mapTo: ${fieldName} but your object type does not have @mongo directive set-up`
+          );
+        }
+
+        const isScalar = field.type instanceof GraphQLScalarType;
+        if (!isScalar) {
+          throw new Meteor.Error(
+            'collection-not-found',
+            `You are trying to set the mapTo directive on a non-scalar on field ${fieldName}`
+          );
+        }
+
+        const collection = Mongo.Collection.get(objectType._mongoCollectionName);
+
+        collection.addReducers({
+          [fieldName]: {
+            body: {
+              [mapDirective.to]: 1,
+            },
+            reduce(obj) {
+              return resolve(mapDirective.to, obj);
+            },
+          },
+        });
+      }
+      
+      return field;
     }
-
-    const isScalar = field.type instanceof GraphQLScalarType;
-    if (!isScalar) {
-      throw new Meteor.Error(
-        'collection-not-found',
-        `You are trying to set the mapTo directive on a non-scalar on field ${
-          field.name
-        }`
-      );
-    }
-
-    const collection = Mongo.Collection.get(objectType._mongoCollectionName);
-
-    collection.addReducers({
-      [field.name]: {
-        body: {
-          [args.to]: 1,
-        },
-        reduce(obj) {
-          return resolve(args.to, obj);
-        },
-      },
-    });
-  }
+  });
 }

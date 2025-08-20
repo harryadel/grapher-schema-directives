@@ -1,20 +1,19 @@
-import { SchemaDirectiveVisitor } from 'graphql-tools';
+import { mapSchema, getDirectives } from '@graphql-tools/utils';
 import { Mongo } from 'meteor/mongo';
 
-export default class MongoDirective extends SchemaDirectiveVisitor {
-  /**
-   * @param {GraphQLObjectType} type
-   */
-  visitObject(type) {
-    if (type._mongoCollectionName) {
-      // it has already been setup by a link directive somewhere
-      return;
+export default function mongoDirectiveTransformer(schema) {
+  return mapSchema(schema, {
+    [mapSchema.MAP_OBJECT_TYPE]: (type) => {
+      const directives = getDirectives(schema, type);
+      const mongoDirective = directives.mongo;
+      
+      if (mongoDirective && mongoDirective.name) {
+        setupMongoDirective(type, { name: mongoDirective.name });
+      }
+      
+      return type;
     }
-
-    setupMongoDirective(type, this.args);
-  }
-
-  visitFieldDefinition() {}
+  });
 }
 
 export function setupMongoDirective(type, args) {
