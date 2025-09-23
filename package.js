@@ -13,6 +13,10 @@ Package.describe({
   documentation: 'README.md',
 });
 
+Npm.depends({
+  '@graphql-tools/utils': '10.9.1',
+});
+
 Package.onUse(function(api) {
   api.versionsFrom(['1.3', '3.0']);
   api.use('ecmascript');
