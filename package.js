@@ -13,9 +13,9 @@ Package.describe({
   documentation: 'README.md',
 });
 
-Npm.depends({
-  '@graphql-tools/utils': '10.9.1',
-});
+// @graphql-tools/utils is provided as a peer dependency from the main package.json
+// This ensures all packages use the same GraphQL-related packages to avoid
+// "Cannot use GraphQLSchema from another module or realm" errors
 
 Package.onUse(function(api) {
   api.versionsFrom(['1.3', '3.0']);
